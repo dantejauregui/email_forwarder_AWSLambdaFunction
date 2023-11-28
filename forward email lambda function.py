@@ -47,10 +47,17 @@ def create_message(file_dict):
 
     # Parse the email body.
     mailobject = email.message_from_string(file_dict['file'].decode('utf-8'))
-
+    
+    
+    # Include sender's email address in the message dictionary
+    sender_email = mailobject.get_all('From')
+    # Find the start and end indexes of the email address
+    sender_email_filtered = parseaddr(sender_email[0])[1]
+    print(type(sender_email_filtered))
+    
     # Create a new subject line.
     subject_original = mailobject['Subject']
-    subject = "FW: " + subject_original
+    subject = subject_original
     
     # Extract the HTML part of the email body
     html_part = None
@@ -60,8 +67,8 @@ def create_message(file_dict):
             break
 
     # The body text of the email.
-    body_text = html_part if html_part else mailobject.get_payload()
-
+    body_text = (f"<div>email from {sender_email_filtered}</div><br> " + html_part) if html_part else mailobject.get_payload()
+    print(body_text)
 
     # The file name to use for the attached message. Uses regex to remove all
     # non-alphanumeric characters, and appends a file extension.
@@ -75,12 +82,7 @@ def create_message(file_dict):
     msg.attach(text_part)
     
     
-    # Include sender's email address in the message dictionary
-    sender_email = mailobject.get_all('From')
     
-    # Find the start and end indexes of the email address
-    sender_email_filtered = parseaddr(sender_email[0])[1]
-    print(type(sender_email_filtered))
     
 
     # Add subject, from and to lines.

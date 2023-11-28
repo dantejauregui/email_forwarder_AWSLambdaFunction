@@ -2,6 +2,7 @@ import os
 import boto3
 import email
 import re
+from email.utils import parseaddr
 from botocore.exceptions import ClientError
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -72,10 +73,21 @@ def create_message(file_dict):
     text_part = MIMEText(body_text, _subtype="html")
     # Attach the text part to the MIME message.
     msg.attach(text_part)
+    
+    
+    # Include sender's email address in the message dictionary
+    sender_email = mailobject.get_all('From')
+    
+    # Find the start and end indexes of the email address
+    sender_email_filtered = parseaddr(sender_email[0])[1]
+    print(type(sender_email_filtered))
+    
 
     # Add subject, from and to lines.
     msg['Subject'] = subject
     msg['From'] = sender
+    #receiving Permissions are not granted and is blocking, even I am in Production: 
+    #msg['From'] = sender_email_filtered
     msg['To'] = recipient
 
     # Create a new MIME object.
@@ -84,11 +96,17 @@ def create_message(file_dict):
 
     # Attach the file object to the message.
     msg.attach(att)
+    
+    # Include sender's email address in the message dictionary
+    print(f"Sender's Email: {sender_email}")
+    print(f"Original config's Email: {sender}")
+    
 
     message = {
         "Source": sender,
         "Destinations": recipient,
-        "Data": msg.as_string()
+        "Data": msg.as_string(),
+        "Sender": sender_email_filtered
     }
 
     return message
@@ -105,6 +123,7 @@ def send_email(message):
         #Provide the contents of the email.
         response = client_ses.send_raw_email(
             Source=message['Source'],
+            #Source=message['Sender'],
             Destinations=[
                 message['Destinations']
             ],
